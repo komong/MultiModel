@@ -1,0 +1,22 @@
+# ============================================================
+# MultiModel — 多模型统一接入与追踪系统
+# ============================================================
+#
+# 项目包含两个子模块：
+#   model-platform/   — LiteLLM Proxy 多模型统一接入层
+#   model-tracing/    — 模型调用追踪层（Langfuse / Console）
+#
+# 安装方式：
+#   pip install -r requirements.txt
+# ============================================================
+
+# —— 核心依赖 ——
+openai>=1.0.0                     # OpenAI 兼容客户端（调用 LiteLLM Proxy）
+litellm[proxy]>=1.84.0            # LiteLLM Proxy 服务 + 模型路由
+python-dotenv>=1.0.0              # .env 环境变量加载
+
+# —— 追踪后端 ——
+langfuse>=2.0.0                   # Langfuse 追踪（可选，TRACER_BACKEND=langfuse 时使用）
+
+# —— 工具依赖 ——
+requests>=2.31.0                  # HTTP 请求（用于 create_keys.py 虚拟 Key 管理）

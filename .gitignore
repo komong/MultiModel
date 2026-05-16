@@ -1,0 +1,22 @@
+# —— 环境变量（含 API Key）——
+**/.env
+
+# —— 日志文件 ——
+*.log
+model-platform/proxy.err.log
+model-platform/proxy.out.log
+
+# —— 打包文件 ——
+zip/
+
+# —— WSL 文件系统镜像 ——
+wsl.localhost/
+
+# —— Qoder 内部配置 ——
+.qoder/
+
+# —— Python 缓存 ——
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
