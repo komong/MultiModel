@@ -34,60 +34,85 @@ class RoutingRule:
 
 class SmartRouteTask:
     DEFAULT_RULES = [
+        # ── 国产模型路由 ──
         RoutingRule(
             task_type=TaskType.CODE,
-            model="gpt-4o",
+            model="deepseek-v4-pro",
             matcher=lambda p: any(
                 kw in p.lower() for kw in
                 ["代码", "函数", "python", "javascript", "bug", "debug",
                  "code", "program", "script", "api", "sql"]
             ),
             priority=10,
-            description="代码相关任务 → GPT-4o",
+            description="代码相关任务 → deepseek-v4-pro",
         ),
         RoutingRule(
             task_type=TaskType.ANALYSIS,
-            model="claude-sonnet",
+            model="glm-5-1",
             matcher=lambda p: any(
                 kw in p.lower() for kw in
                 ["分析", "为什么", "原因", "对比", "比较", "评估",
                  "analyze", "compare", "evaluate", "reason"]
             ),
             priority=8,
-            description="分析推理任务 → Claude Sonnet",
+            description="分析推理任务 → glm-5-1",
         ),
         RoutingRule(
             task_type=TaskType.TRANSLATION,
-            model="gpt-4o-mini",
+            model="minimax-m2-5",
             matcher=lambda p: any(
                 kw in p.lower() for kw in ["翻译", "translate", "英文", "中文", "日文"]
             ),
             priority=7,
-            description="翻译任务 → GPT-4o-mini",
+            description="翻译任务 → minimax-m2-5",
         ),
         RoutingRule(
             task_type=TaskType.SUMMARIZATION,
-            model="gpt-4o-mini",
+            model="minimax-m2-5",
             matcher=lambda p: any(
                 kw in p.lower() for kw in ["总结", "摘要", "归纳", "summarize", "summary"]
             ),
             priority=7,
-            description="摘要任务 → GPT-4o-mini",
+            description="摘要任务 → minimax-m2-5",
         ),
         RoutingRule(
             task_type=TaskType.LONG_GENERATION,
-            model="claude-sonnet",
+            model="deepseek-v4-pro",
             matcher=lambda p: len(p) > 300,
             priority=3,
-            description="长输入任务 → Claude Sonnet",
+            description="长输入任务 → deepseek-v4-pro",
+        ),
+        RoutingRule(
+            task_type=TaskType.SIMPLE_QA,
+            model="deepseek-v4-flash",
+            matcher=lambda p: any(
+                kw in p.lower() for kw in ["你好", "什么是", "介绍", "解释", "hello", "what is"]
+            ),
+            priority=2,
+            description="简单问答 → deepseek-v4-flash",
         ),
         RoutingRule(
             task_type=TaskType.DEFAULT,
-            model="gpt-4o-mini",
+            model="deepseek-v4-flash",
             matcher=lambda p: True,
             priority=0,
-            description="默认 → GPT-4o-mini",
+            description="默认 → deepseek-v4-flash",
         ),
+        # ── 国外模型路由（接入后启用，优先级可按需调整） ──
+        # RoutingRule(
+        #     task_type=TaskType.CODE,
+        #     model="gpt-4o",
+        #     matcher=lambda p: any(kw in p.lower() for kw in [...]),
+        #     priority=9,
+        #     description="代码相关任务 → GPT-4o",
+        # ),
+        # RoutingRule(
+        #     task_type=TaskType.ANALYSIS,
+        #     model="claude-sonnet",
+        #     matcher=lambda p: any(kw in p.lower() for kw in [...]),
+        #     priority=7,
+        #     description="分析推理任务 → Claude Sonnet",
+        # ),
     ]
 
     def __init__(self, client: LLMClient, tracer: BaseTracer = None, rules=None):
@@ -103,7 +128,7 @@ class SmartRouteTask:
         for rule in self.rules:
             if rule.matcher(prompt):
                 return rule.task_type, rule.model, rule.description
-        return TaskType.DEFAULT, "gpt-4o-mini", "fallback"
+        return TaskType.DEFAULT, "deepseek-v4-flash", "fallback"
 
     async def run(
         self,
@@ -133,6 +158,8 @@ class SmartRouteTask:
             latency_ms=resp.latency_ms,
             success=resp.success,
             error=resp.error,
+            input_tokens=resp.input_tokens,
+            output_tokens=resp.output_tokens,
         )
 
         result = TaskResult(
@@ -157,6 +184,8 @@ class SmartRouteTask:
             model=model,
             input=prompt,
             output=resp.content if resp.success else "",
+            input_tokens=resp.input_tokens,
+            output_tokens=resp.output_tokens,
             total_tokens=resp.total_tokens,
             latency_ms=resp.latency_ms,
             status=SpanStatus.SUCCESS if resp.success else SpanStatus.ERROR,

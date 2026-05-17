@@ -50,6 +50,8 @@ class ParallelTask:
                 latency_ms=resp.latency_ms,
                 success=resp.success,
                 error=resp.error,
+                input_tokens=resp.input_tokens,
+                output_tokens=resp.output_tokens,
             )
             steps.append(step)
             total_tokens += resp.total_tokens
@@ -85,6 +87,8 @@ class ParallelTask:
                 model=s.model,
                 input=s.input,
                 output=s.output,
+                input_tokens=s.input_tokens,
+                output_tokens=s.output_tokens,
                 total_tokens=s.tokens,
                 latency_ms=s.latency_ms,
                 status=SpanStatus.SUCCESS if s.success else SpanStatus.ERROR,

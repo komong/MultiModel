@@ -11,9 +11,10 @@ main.py
 
 import asyncio
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(Path(__file__).parent.parent / '.env')
 
 from core.llm_client import LLMClient
 from core.tracer_factory import create_tracer
@@ -38,7 +39,7 @@ async def demo_parallel():
     task = ParallelTask(client, tracer)
     result = await task.run(
         prompt="用三句话解释什么是机器学习",
-        models=["gpt-4o", "claude-sonnet", "gpt-4o-mini"],
+                models=["minimax-m2-5"],
         source_system="demo",
         task_type="summarization",
     )
@@ -51,12 +52,12 @@ async def demo_pipeline():
     steps = [
         PipelineStep(
             name="提取关键词",
-            model="gpt-4o-mini",
+            model="minimax-m2-5",
             prompt_template="从以下主题提取5个核心关键词，只输出关键词列表：\n{input}",
         ),
         PipelineStep(
             name="生成大纲",
-            model="gpt-4o-mini",
+            model="minimax-m2-5",
             prompt_template=(
                 "原始主题：{original_input}\n"
                 "关键词：{input}\n\n"
@@ -65,7 +66,7 @@ async def demo_pipeline():
         ),
         PipelineStep(
             name="扩写正文",
-            model="claude-sonnet",
+            model="minimax-m2-5",
             prompt_template="根据以下大纲，写一篇500字左右的完整文章：\n{input}",
             temperature=0.8,
         ),
@@ -103,8 +104,8 @@ async def main():
     await demo_smart_route_classify()
 
     # 以下需要 LiteLLM Proxy 运行
-    # await demo_parallel()
-    # await demo_pipeline()
+    await demo_parallel()
+    await demo_pipeline()
 
     tracer.flush()
 
