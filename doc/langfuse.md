@@ -39,7 +39,7 @@ LANGFUSE_HOST=http://localhost:3000
 
 配置文件：`model-tracing/langfuse-docker-compose.yml`
 
-- Langfuse Server：`langfuse/langfuse:latest`，端口 3000
+- Langfuse Server：`langfuse/langfuse:2`，端口 3000
 - PostgreSQL 15：`langfuse-db`，端口 5432（内部）
 - 数据持久化：`langfuse_postgres` volume
 - 健康检查：`pg_isready`，5s 间隔，10 次重试

@@ -6,7 +6,7 @@ version: "3.8"
 
 services:
   langfuse-server:
-    image: langfuse/langfuse:latest
+    image: langfuse/langfuse:2
     ports:
       - "3000:3000"
     environment:
