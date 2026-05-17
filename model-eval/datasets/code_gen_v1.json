@@ -1,0 +1,447 @@
+[
+  {
+    "id": "py-simple-001",
+    "input": {
+      "instruction": "写一个函数，输入整数列表，返回去重后排序的结果",
+      "language": "python",
+      "granularity": "function",
+      "context": ""
+    },
+    "expected_output": {
+      "test_cases": [
+        {"input": "[3, 1, 2, 1]", "expected": "[1, 2, 3]"},
+        {"input": "[]", "expected": "[]"},
+        {"input": "[1, 1, 1]", "expected": "[1]"},
+        {"input": "[5, 3, 5, 1]", "expected": "[1, 3, 5]"}
+      ],
+      "must_contain": ["set", "sorted"],
+      "reference_solution": "def dedup_sorted(lst):\n    return sorted(set(lst))"
+    },
+    "metadata": {
+      "difficulty": "easy",
+      "tags": ["list", "dedup", "sort"],
+      "source": "manual"
+    }
+  },
+  {
+    "id": "py-simple-002",
+    "input": {
+      "instruction": "写一个函数，判断一个字符串是否是回文",
+      "language": "python",
+      "granularity": "function",
+      "context": ""
+    },
+    "expected_output": {
+      "test_cases": [
+        {"input": "'aba'", "expected": "True"},
+        {"input": "'abc'", "expected": "False"},
+        {"input": "''", "expected": "True"},
+        {"input": "'a'", "expected": "True"},
+        {"input": "'abba'", "expected": "True"}
+      ],
+      "must_contain": [],
+      "reference_solution": "def is_palindrome(s):\n    return s == s[::-1]"
+    },
+    "metadata": {
+      "difficulty": "easy",
+      "tags": ["string", "palindrome"],
+      "source": "manual"
+    }
+  },
+  {
+    "id": "py-simple-003",
+    "input": {
+      "instruction": "写一个函数，计算字符串中每个字符出现的次数，返回字典",
+      "language": "python",
+      "granularity": "function",
+      "context": ""
+    },
+    "expected_output": {
+      "test_cases": [
+        {"input": "'aab'", "expected": "{'a': 2, 'b': 1}"},
+        {"input": "''", "expected": "{}"},
+        {"input": "'abc'", "expected": "{'a': 1, 'b': 1, 'c': 1}"}
+      ],
+      "must_contain": ["dict"],
+      "reference_solution": "def char_count(s):\n    result = {}\n    for c in s:\n        result[c] = result.get(c, 0) + 1\n    return result"
+    },
+    "metadata": {
+      "difficulty": "easy",
+      "tags": ["string", "count", "dict"],
+      "source": "manual"
+    }
+  },
+  {
+    "id": "py-simple-004",
+    "input": {
+      "instruction": "写一个函数，将两个字典合并，相同键的值相加",
+      "language": "python",
+      "granularity": "function",
+      "context": ""
+    },
+    "expected_output": {
+      "test_cases": [
+        {"input": "({'a': 1, 'b': 2}, {'b': 3, 'c': 4})", "expected": "{'a': 1, 'b': 5, 'c': 4}"},
+        {"input": "({}, {'a': 1})", "expected": "{'a': 1}"},
+        {"input": "({'a': 1}, {})", "expected": "{'a': 1}"}
+      ],
+      "must_contain": [],
+      "reference_solution": "def merge_dicts(d1, d2):\n    result = d1.copy()\n    for k, v in d2.items():\n        result[k] = result.get(k, 0) + v\n    return result"
+    },
+    "metadata": {
+      "difficulty": "easy",
+      "tags": ["dict", "merge"],
+      "source": "manual"
+    }
+  },
+  {
+    "id": "py-simple-005",
+    "input": {
+      "instruction": "写一个函数，返回列表中的最大值和最小值组成的元组",
+      "language": "python",
+      "granularity": "function",
+      "context": ""
+    },
+    "expected_output": {
+      "test_cases": [
+        {"input": "[3, 1, 4, 1, 5]", "expected": "(5, 1)"},
+        {"input": "[7]", "expected": "(7, 7)"},
+        {"input": "[-1, -5, 2]", "expected": "(2, -5)"}
+      ],
+      "must_contain": [],
+      "reference_solution": "def min_max(lst):\n    return (max(lst), min(lst))"
+    },
+    "metadata": {
+      "difficulty": "easy",
+      "tags": ["list", "min", "max"],
+      "source": "manual"
+    }
+  },
+  {
+    "id": "js-simple-001",
+    "input": {
+      "instruction": "写一个函数，输入整数数组，返回去重后排序的结果",
+      "language": "javascript",
+      "granularity": "function",
+      "context": ""
+    },
+    "expected_output": {
+      "test_cases": [
+        {"input": "[3, 1, 2, 1]", "expected": "[1, 2, 3]"},
+        {"input": "[]", "expected": "[]"},
+        {"input": "[1, 1, 1]", "expected": "[1]"}
+      ],
+      "must_contain": [],
+      "reference_solution": "function dedupSorted(arr) {\n  return [...new Set(arr)].sort((a, b) => a - b);\n}"
+    },
+    "metadata": {
+      "difficulty": "easy",
+      "tags": ["array", "dedup", "sort"],
+      "source": "manual"
+    }
+  },
+  {
+    "id": "js-simple-002",
+    "input": {
+      "instruction": "写一个函数，判断一个字符串是否是回文",
+      "language": "javascript",
+      "granularity": "function",
+      "context": ""
+    },
+    "expected_output": {
+      "test_cases": [
+        {"input": "'aba'", "expected": "true"},
+        {"input": "'abc'", "expected": "false"},
+        {"input": "''", "expected": "true"}
+      ],
+      "must_contain": [],
+      "reference_solution": "function isPalindrome(s) {\n  return s === s.split('').reverse().join('');\n}"
+    },
+    "metadata": {
+      "difficulty": "easy",
+      "tags": ["string", "palindrome"],
+      "source": "manual"
+    }
+  },
+  {
+    "id": "js-simple-003",
+    "input": {
+      "instruction": "写一个函数，将对象中所有值为 null 的键删除，返回新对象",
+      "language": "javascript",
+      "granularity": "function",
+      "context": ""
+    },
+    "expected_output": {
+      "test_cases": [
+        {"input": "{a: 1, b: null, c: 3}", "expected": "{a: 1, c: 3}"},
+        {"input": "{a: null}", "expected": "{}"},
+        {"input": "{}", "expected": "{}"}
+      ],
+      "must_contain": [],
+      "reference_solution": "function removeNull(obj) {\n  return Object.fromEntries(Object.entries(obj).filter(([k, v]) => v !== null));\n}"
+    },
+    "metadata": {
+      "difficulty": "easy",
+      "tags": ["object", "null", "filter"],
+      "source": "manual"
+    }
+  },
+  {
+    "id": "sql-simple-001",
+    "input": {
+      "instruction": "写一条 SQL，查询 employees 表中薪资大于 50000 的员工姓名和薪资，按薪资降序排列",
+      "language": "sql",
+      "granularity": "function",
+      "context": "表结构: employees(id, name, salary, department)"
+    },
+    "expected_output": {
+      "test_cases": [],
+      "must_contain": ["SELECT", "FROM", "WHERE", "ORDER BY", "DESC"],
+      "reference_solution": "SELECT name, salary FROM employees WHERE salary > 50000 ORDER BY salary DESC;"
+    },
+    "metadata": {
+      "difficulty": "easy",
+      "tags": ["sql", "select", "filter", "order"],
+      "source": "manual"
+    }
+  },
+  {
+    "id": "sql-simple-002",
+    "input": {
+      "instruction": "写一条 SQL，查询每个部门的员工数量和平均薪资",
+      "language": "sql",
+      "granularity": "function",
+      "context": "表结构: employees(id, name, salary, department)"
+    },
+    "expected_output": {
+      "test_cases": [],
+      "must_contain": ["SELECT", "GROUP BY", "COUNT", "AVG"],
+      "reference_solution": "SELECT department, COUNT(*) AS employee_count, AVG(salary) AS avg_salary FROM employees GROUP BY department;"
+    },
+    "metadata": {
+      "difficulty": "easy",
+      "tags": ["sql", "group by", "aggregate"],
+      "source": "manual"
+    }
+  },
+  {
+    "id": "sql-simple-003",
+    "input": {
+      "instruction": "写一条 SQL，查询薪资高于其所在部门平均薪资的员工姓名和薪资",
+      "language": "sql",
+      "granularity": "function",
+      "context": "表结构: employees(id, name, salary, department)"
+    },
+    "expected_output": {
+      "test_cases": [],
+      "must_contain": ["SELECT", "SUBQUERY", "AVG"],
+      "reference_solution": "SELECT e.name, e.salary FROM employees e WHERE e.salary > (SELECT AVG(salary) FROM employees WHERE department = e.department);"
+    },
+    "metadata": {
+      "difficulty": "medium",
+      "tags": ["sql", "subquery", "correlated"],
+      "source": "manual"
+    }
+  },
+  {
+    "id": "py-medium-001",
+    "input": {
+      "instruction": "写一个函数，实现扁平化嵌套列表。例如输入 [1, [2, [3, 4], 5]] 返回 [1, 2, 3, 4, 5]",
+      "language": "python",
+      "granularity": "function",
+      "context": ""
+    },
+    "expected_output": {
+      "test_cases": [
+        {"input": "[1, [2, [3, 4], 5]]", "expected": "[1, 2, 3, 4, 5]"},
+        {"input": "[1, 2, 3]", "expected": "[1, 2, 3]"},
+        {"input": "[]", "expected": "[]"},
+        {"input": "[[1], [2, [3]]]", "expected": "[1, 2, 3]"}
+      ],
+      "must_contain": [],
+      "reference_solution": "def flatten(lst):\n    result = []\n    for item in lst:\n        if isinstance(item, list):\n            result.extend(flatten(item))\n        else:\n            result.append(item)\n    return result"
+    },
+    "metadata": {
+      "difficulty": "medium",
+      "tags": ["list", "recursion", "flatten"],
+      "source": "manual"
+    }
+  },
+  {
+    "id": "py-medium-002",
+    "input": {
+      "instruction": "写一个函数，将罗马数字字符串转换为整数。例如 'III' -> 3, 'IV' -> 4, 'IX' -> 9",
+      "language": "python",
+      "granularity": "function",
+      "context": ""
+    },
+    "expected_output": {
+      "test_cases": [
+        {"input": "'III'", "expected": "3"},
+        {"input": "'IV'", "expected": "4"},
+        {"input": "'IX'", "expected": "9"},
+        {"input": "'LVIII'", "expected": "58"},
+        {"input": "'MCMXCIV'", "expected": "1994"}
+      ],
+      "must_contain": [],
+      "reference_solution": "def roman_to_int(s):\n    roman = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000}\n    total = 0\n    for i in range(len(s)):\n        if i + 1 < len(s) and roman[s[i]] < roman[s[i+1]]:\n            total -= roman[s[i]]\n        else:\n            total += roman[s[i]]\n    return total"
+    },
+    "metadata": {
+      "difficulty": "medium",
+      "tags": ["string", "roman", "conversion"],
+      "source": "manual"
+    }
+  },
+  {
+    "id": "py-medium-003",
+    "input": {
+      "instruction": "写一个函数，找出字符串中最长的无重复字符子串的长度",
+      "language": "python",
+      "granularity": "function",
+      "context": ""
+    },
+    "expected_output": {
+      "test_cases": [
+        {"input": "'abcabcbb'", "expected": "3"},
+        {"input": "'bbbbb'", "expected": "1"},
+        {"input": "'pwwkew'", "expected": "3"},
+        {"input": "''", "expected": "0"}
+      ],
+      "must_contain": [],
+      "reference_solution": "def length_of_longest_substring(s):\n    char_set = set()\n    left = 0\n    max_len = 0\n    for right in range(len(s)):\n        while s[right] in char_set:\n            char_set.remove(s[left])\n            left += 1\n        char_set.add(s[right])\n        max_len = max(max_len, right - left + 1)\n    return max_len"
+    },
+    "metadata": {
+      "difficulty": "medium",
+      "tags": ["string", "sliding-window", "substring"],
+      "source": "manual"
+    }
+  },
+  {
+    "id": "py-medium-004",
+    "input": {
+      "instruction": "写一个函数，合并多个有序列表为一个有序列表",
+      "language": "python",
+      "granularity": "function",
+      "context": ""
+    },
+    "expected_output": {
+      "test_cases": [
+        {"input": "[[1, 4, 5], [1, 3, 4], [2, 6]]", "expected": "[1, 1, 2, 3, 4, 4, 5, 6]"},
+        {"input": "[[1], []]", "expected": "[1]"},
+        {"input": "[[], [], []]", "expected": "[]"}
+      ],
+      "must_contain": [],
+      "reference_solution": "def merge_sorted_lists(lists):\n    import heapq\n    result = []\n    heap = []\n    for i, lst in enumerate(lists):\n        if lst:\n            heapq.heappush(heap, (lst[0], i, 0))\n    while heap:\n        val, list_idx, elem_idx = heapq.heappop(heap)\n        result.append(val)\n        if elem_idx + 1 < len(lists[list_idx]):\n            next_val = lists[list_idx][elem_idx + 1]\n            heapq.heappush(heap, (next_val, list_idx, elem_idx + 1))\n    return result"
+    },
+    "metadata": {
+      "difficulty": "medium",
+      "tags": ["list", "merge", "heap"],
+      "source": "manual"
+    }
+  },
+  {
+    "id": "py-medium-005",
+    "input": {
+      "instruction": "写一个函数，实现 LRU 缓存，支持 get 和 put 操作，容量满时淘汰最久未使用的键",
+      "language": "python",
+      "granularity": "function",
+      "context": ""
+    },
+    "expected_output": {
+      "test_cases": [
+        {"input": "None", "expected": "'skip_lru'"}
+      ],
+      "must_contain": ["get", "put"],
+      "reference_solution": "class LRUCache:\n    def __init__(self, capacity):\n        from collections import OrderedDict\n        self.cache = OrderedDict()\n        self.capacity = capacity\n    def get(self, key):\n        if key not in self.cache:\n            return -1\n        self.cache.move_to_end(key)\n        return self.cache[key]\n    def put(self, key, value):\n        if key in self.cache:\n            self.cache.move_to_end(key)\n        self.cache[key] = value\n        if len(self.cache) > self.capacity:\n            self.cache.popitem(last=False)"
+    },
+    "metadata": {
+      "difficulty": "medium",
+      "tags": ["cache", "lru", "design"],
+      "source": "manual"
+    }
+  },
+  {
+    "id": "py-class-001",
+    "input": {
+      "instruction": "写一个 Stack 类，实现 push、pop、peek、is_empty、size 方法",
+      "language": "python",
+      "granularity": "class",
+      "context": ""
+    },
+    "expected_output": {
+      "test_cases": [
+        {"input": "None", "expected": "'skip_class'"}
+      ],
+      "must_contain": ["push", "pop", "peek"],
+      "reference_solution": "class Stack:\n    def __init__(self):\n        self._items = []\n    def push(self, item):\n        self._items.append(item)\n    def pop(self):\n        if self.is_empty():\n            raise IndexError('pop from empty stack')\n        return self._items.pop()\n    def peek(self):\n        if self.is_empty():\n            raise IndexError('peek from empty stack')\n        return self._items[-1]\n    def is_empty(self):\n        return len(self._items) == 0\n    def size(self):\n        return len(self._items)"
+    },
+    "metadata": {
+      "difficulty": "easy",
+      "tags": ["class", "stack", "data-structure"],
+      "source": "manual"
+    }
+  },
+  {
+    "id": "py-class-002",
+    "input": {
+      "instruction": "写一个 LinkedList 类，实现 append、prepend、delete、search 方法，节点用内部类 Node 表示",
+      "language": "python",
+      "granularity": "class",
+      "context": ""
+    },
+    "expected_output": {
+      "test_cases": [
+        {"input": "None", "expected": "'skip_class'"}
+      ],
+      "must_contain": ["append", "prepend", "delete", "search", "Node"],
+      "reference_solution": "class LinkedList:\n    class Node:\n        def __init__(self, data):\n            self.data = data\n            self.next = None\n    def __init__(self):\n        self.head = None\n    def append(self, data):\n        new_node = self.Node(data)\n        if not self.head:\n            self.head = new_node\n            return\n        current = self.head\n        while current.next:\n            current = current.next\n        current.next = new_node\n    def prepend(self, data):\n        new_node = self.Node(data)\n        new_node.next = self.head\n        self.head = new_node\n    def delete(self, data):\n        if not self.head:\n            return\n        if self.head.data == data:\n            self.head = self.head.next\n            return\n        current = self.head\n        while current.next:\n            if current.next.data == data:\n                current.next = current.next.next\n                return\n            current = current.next\n    def search(self, data):\n        current = self.head\n        while current:\n            if current.data == data:\n                return True\n            current = current.next\n        return False"
+    },
+    "metadata": {
+      "difficulty": "medium",
+      "tags": ["class", "linked-list", "data-structure"],
+      "source": "manual"
+    }
+  },
+  {
+    "id": "py-class-003",
+    "input": {
+      "instruction": "写一个 EventEmitter 类，实现 on(event, handler)、off(event, handler)、emit(event, *args) 方法，支持同一事件注册多个回调",
+      "language": "python",
+      "granularity": "class",
+      "context": ""
+    },
+    "expected_output": {
+      "test_cases": [
+        {"input": "None", "expected": "'skip_class'"}
+      ],
+      "must_contain": ["on", "off", "emit"],
+      "reference_solution": "class EventEmitter:\n    def __init__(self):\n        self._handlers = {}\n    def on(self, event, handler):\n        if event not in self._handlers:\n            self._handlers[event] = []\n        self._handlers[event].append(handler)\n    def off(self, event, handler):\n        if event in self._handlers:\n            self._handlers[event] = [h for h in self._handlers[event] if h != handler]\n    def emit(self, event, *args):\n        if event in self._handlers:\n            for handler in self._handlers[event]:\n                handler(*args)"
+    },
+    "metadata": {
+      "difficulty": "medium",
+      "tags": ["class", "event", "observer-pattern"],
+      "source": "manual"
+    }
+  },
+  {
+    "id": "py-class-004",
+    "input": {
+      "instruction": "写一个 Timer 上下文管理器类，用 with 语句包裹代码块，自动打印执行时间。支持 as 语法获取耗时秒数",
+      "language": "python",
+      "granularity": "class",
+      "context": ""
+    },
+    "expected_output": {
+      "test_cases": [
+        {"input": "None", "expected": "'skip_class'"}
+      ],
+      "must_contain": ["__enter__", "__exit__"],
+      "reference_solution": "import time\nclass Timer:\n    def __init__(self, name='Timer'):\n        self.name = name\n        self.elapsed = 0\n    def __enter__(self):\n        self._start = time.time()\n        return self\n    def __exit__(self, *args):\n        self.elapsed = time.time() - self._start\n        print(f'{self.name}: {self.elapsed:.4f}s')"
+    },
+    "metadata": {
+      "difficulty": "medium",
+      "tags": ["class", "context-manager", "timer"],
+      "source": "manual"
+    }
+  }
+]
