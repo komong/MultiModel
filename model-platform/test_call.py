@@ -11,7 +11,7 @@ load_dotenv()
 
 client = OpenAI(
     api_key="sk-my-master-key-1234",
-    base_url="http://localhost:4000/v1",
+    base_url="http://localhost:4800/v1",
 )
 
 models = [

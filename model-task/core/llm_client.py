@@ -25,6 +25,10 @@ class LLMResponse:
     error: Optional[str] = None
 
 
+# 推理模型：思考链消耗大量 token，需要更高的 max_tokens
+REASONING_MODELS = {"minimax-m2-7", "deepseek-v4-flash", "deepseek-v4-pro"}
+
+
 class LLMClient:
     """
     封装对 LiteLLM Proxy 的调用。
@@ -33,7 +37,7 @@ class LLMClient:
 
     def __init__(
         self,
-        base_url: str = "http://localhost:4000",
+        base_url: str = "http://localhost:4800",
         api_key: str = "sk-my-master-key-1234",
     ):
         self.client = AsyncOpenAI(base_url=base_url, api_key=api_key)
@@ -57,11 +61,16 @@ class LLMClient:
                 # LiteLLM 支持通过 metadata 透传追踪信息（接 Langfuse 时用）
                 extra_body["metadata"] = metadata
 
+            # 推理模型自动提升 max_tokens
+            effective_max_tokens = max_tokens
+            if model in REASONING_MODELS and max_tokens <= 2048:
+                effective_max_tokens = 8192
+
             response = await self.client.chat.completions.create(
                 model=model,
                 messages=messages,
                 temperature=temperature,
-                max_tokens=max_tokens,
+                max_tokens=effective_max_tokens,
                 extra_body=extra_body if extra_body else None,
             )
             latency_ms = (time.time() - start) * 1000
