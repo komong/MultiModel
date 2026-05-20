@@ -20,3 +20,6 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# —— 评测结果 ——
+model-eval/results/*.json
