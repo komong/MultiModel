@@ -46,6 +46,7 @@ def create_dataset_from_json(
         public_key=os.environ.get("LANGFUSE_PUBLIC_KEY"),
         secret_key=os.environ.get("LANGFUSE_SECRET_KEY"),
         host=os.environ.get("LANGFUSE_HOST", "http://localhost:3000"),
+        timeout=120,
     )
 
     # 创建 dataset（已存在不会报错，Langfuse SDK 会处理）
@@ -107,6 +108,7 @@ def run_experiment(
         public_key=os.environ.get("LANGFUSE_PUBLIC_KEY"),
         secret_key=os.environ.get("LANGFUSE_SECRET_KEY"),
         host=os.environ.get("LANGFUSE_HOST", "http://localhost:3000"),
+        timeout=120,
     )
 
     dataset = client.get_dataset(dataset_name)

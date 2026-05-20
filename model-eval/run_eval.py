@@ -18,9 +18,12 @@ run_eval.py
 
 import argparse
 import asyncio
+import json
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
+from dataclasses import asdict
 from dotenv import load_dotenv
 
 # 加载项目根目录 .env
@@ -33,6 +36,9 @@ from langfuse_dataset import load_items_from_json, create_dataset_from_json, run
 # 默认评测模型列表
 DEFAULT_MODELS = ["minimax-m2-5", "minimax-m2-7", "deepseek-v4-flash"]
 
+# 推理模型：思考链消耗大量 token，需要更高的 max_tokens
+REASONING_MODELS = {"minimax-m2-7", "deepseek-v4-flash", "deepseek-v4-pro"}
+
 # 默认数据集路径
 DEFAULT_DATASET = str(Path(__file__).parent / "datasets" / "code_gen_v1.json")
 
@@ -44,6 +50,9 @@ def make_model_fn(model: str):
     base_url = os.getenv("LITELLM_BASE_URL", "http://localhost:4800")
     api_key = os.getenv("LITELLM_MASTER_KEY", "sk-my-master-key-1234")
     client = OpenAI(base_url=base_url, api_key=api_key)
+
+    # 根据模型类型设置 max_tokens
+    max_tokens = 8192 if model in REASONING_MODELS else 2048
 
     def model_fn(inp: dict) -> str:
         instruction = inp.get("instruction", "")
@@ -73,7 +82,7 @@ def make_model_fn(model: str):
                     {"role": "user", "content": user_prompt},
                 ],
                 temperature=0.3,
-                max_tokens=2048,
+                max_tokens=max_tokens,
             )
             code = response.choices[0].message.content.strip()
             # 去除可能的 markdown 代码块包裹
@@ -111,6 +120,56 @@ def dry_run(json_path: str):
         print(f"  [{status}] {item.id:20s} | L1={scores.syntax_valid:.0f} L2={scores.test_pass_rate:.2f}")
 
     print()
+
+
+def save_results(all_results: dict[str, list[EvalResult]], output_dir: str = None):
+    """保存评测结果为 JSON 文件，每个模型一个文件 + 一个汇总文件。"""
+    if output_dir is None:
+        output_dir = str(Path(__file__).parent / "results")
+    os.makedirs(output_dir, exist_ok=True)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    summary = {}
+
+    for model_name, results in all_results.items():
+        if not results:
+            continue
+
+        # 单模型详细结果
+        model_data = []
+        for r in results:
+            model_data.append({
+                "item_id": r.item_id,
+                "instruction": r.item.input.instruction,
+                "language": r.item.input.language,
+                "granularity": r.item.input.granularity,
+                "generated_code": r.generated_code,
+                "syntax_valid": r.scores.syntax_valid,
+                "test_pass_rate": r.scores.test_pass_rate,
+                "trace_id": r.trace_id,
+                "error": r.error,
+            })
+
+        model_file = os.path.join(output_dir, f"{timestamp}_{model_name}.json")
+        with open(model_file, "w", encoding="utf-8") as f:
+            json.dump(model_data, f, ensure_ascii=False, indent=2)
+        print(f"  [Save] {model_file}")
+
+        # 汇总
+        avg_l1 = sum(r.scores.syntax_valid for r in results) / len(results)
+        avg_l2 = sum(r.scores.test_pass_rate for r in results) / len(results)
+        summary[model_name] = {
+            "avg_l1": round(avg_l1, 4),
+            "avg_l2": round(avg_l2, 4),
+            "sample_count": len(results),
+            "detail_file": os.path.basename(model_file),
+        }
+
+    # 汇总文件
+    summary_file = os.path.join(output_dir, f"{timestamp}_summary.json")
+    with open(summary_file, "w", encoding="utf-8") as f:
+        json.dump(summary, f, ensure_ascii=False, indent=2)
+    print(f"  [Save] {summary_file}")
 
 
 def print_summary(all_results: dict[str, list[EvalResult]]):
@@ -180,8 +239,9 @@ def main():
         )
         all_results[model] = results
 
-    # 3. 打印汇总
+    # 3. 打印汇总 + 保存结果
     print_summary(all_results)
+    save_results(all_results)
 
 
 if __name__ == "__main__":
