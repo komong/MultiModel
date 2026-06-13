@@ -2,7 +2,7 @@
 Test GLM-5.1 through the local LiteLLM proxy.
 
 Start the proxy first:
-  litellm --config config.yaml --port 4000
+  py start_proxy.py
 """
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -11,7 +11,7 @@ load_dotenv()
 
 client = OpenAI(
     api_key="sk-my-master-key-1234",
-    base_url="http://localhost:4000/v1",
+    base_url="http://localhost:4800/v1",
 )
 
 response = client.chat.completions.create(

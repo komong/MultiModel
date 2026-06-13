@@ -46,28 +46,29 @@ model_list:
     litellm_params:
       model: openai/MiniMax-M2.5
       api_key: os.environ/MINIMAX_API_KEY
-      api_base: https://api.minimax.chat/v1
-      request_timeout: 120
+      api_base: https://api.minimaxi.com/v1
 
   - model_name: minimax-m2-7
     litellm_params:
       model: openai/MiniMax-M2.7
       api_key: os.environ/MINIMAX_API_KEY
-      api_base: https://api.minimax.chat/v1
-      request_timeout: 120
+      api_base: https://api.minimaxi.com/v1
 
   - model_name: deepseek-v4-flash
     litellm_params:
       model: deepseek/deepseek-v4-flash
       api_key: os.environ/DEEPSEEK_API_KEY
-      request_timeout: 120
+
+  - model_name: deepseek-v4-pro
+    litellm_params:
+      model: deepseek/deepseek-v4-pro
+      api_key: os.environ/DEEPSEEK_API_KEY
 
   - model_name: glm-5-1
     litellm_params:
       model: openai/glm-5.1
       api_key: os.environ/ZAI_API_KEY
-      api_base: https://open.bigmodel.cn/api/paas/v4
-      request_timeout: 120
+      api_base: https://api.z.ai/api/paas/v4/
 ```
 
 ### 推理模型 token 配置

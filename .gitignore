@@ -23,3 +23,8 @@ __pycache__/
 
 # —— 评测结果 ——
 model-eval/results/*.json
+
+# —— PostgreSQL 数据与二进制 ——
+pg15/
+pgdata/
+pg15-binaries.zip

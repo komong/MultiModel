@@ -1,7 +1,7 @@
 """
 test_minimax_trace.py
 
-调用 MiniMax-M2.5 模型，将调用过程写入 Langfuse Trace。
+调用 MiniMax-M2.5 模型（通过 LiteLLM Proxy），将调用过程写入 Langfuse Trace。
 目的：在 Langfuse UI 的 Traces 表中看到一条完整的真实调用记录。
 """
 
@@ -37,7 +37,7 @@ def test_minimax_trace():
         trace_context={
             "id": trace_id,
             "name": "minimax-chat-test",
-            "metadata": {"source": "manual-test", "model": "MiniMax-M2.5"},
+            "metadata": {"source": "manual-test", "model": "minimax-m2-5"},
             "tags": ["test", "minimax", "manual"],
         },
         name="minimax-chat-test",
@@ -45,11 +45,10 @@ def test_minimax_trace():
     )
     print(f"Trace 创建成功: {trace_id}")
 
-    # ===== 3. 调用 MiniMax 模型 =====
-    # 项目 .env 中有 MINIMAX_API_KEY，直接调用 MiniMax 原生 API
+    # ===== 3. 通过 LiteLLM Proxy 调用 MiniMax 模型 =====
     mm_client = OpenAI(
-        api_key=os.environ["MINIMAX_API_KEY"],
-        base_url="https://api.minimaxi.com/v1",
+        api_key=os.getenv("LITELLM_MASTER_KEY", "sk-my-master-key-1234"),
+        base_url=os.getenv("LITELLM_BASE_URL", "http://localhost:4800") + "/v1",
     )
 
     prompt = "用一句话介绍广州"
@@ -58,13 +57,13 @@ def test_minimax_trace():
     gen = trace.start_observation(
         name="llm-call",
         as_type="generation",
-        model="MiniMax-M2.5",
+        model="minimax-m2-5",
         input={"messages": [{"role": "user", "content": prompt}]},
     )
 
     try:
         resp = mm_client.chat.completions.create(
-            model="MiniMax-M2.5",
+            model="minimax-m2-5",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7,
             max_tokens=200,

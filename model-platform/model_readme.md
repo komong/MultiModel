@@ -6,7 +6,7 @@
 ## 环境信息
 - **LiteLLM 版本**：1.84.0（最低要求 1.84.0，否则 智谱 GLM-5.1 无法使用）
 - **Python**：3.13
-- **Proxy 端口**：4000
+- **Proxy 端口**：4800
 - **Master Key**：`sk-my-master-key-1234`（config.yaml 中 `general_settings.master_key`）
 
 ## 已接入模型
@@ -44,7 +44,7 @@ from openai import OpenAI
 
 client = OpenAI(
     api_key="sk-my-master-key-1234",
-    base_url="http://localhost:4000/v1",
+    base_url="http://localhost:4800/v1",
 )
 
 response = client.chat.completions.create(

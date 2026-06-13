@@ -1,6 +1,6 @@
 # MultiModel 系统现状梳理
 
-> 更新时间：2026-05-17
+> 更新时间：2026-06-03
 
 ## 一、系统定位
 
@@ -183,6 +183,10 @@ LANGFUSE_HOST=http://localhost:3000
 | ~~4~~ | ~~`model-task/` 未适配根 `.env`~~ | ~~独立 .env.example 与统一配置策略矛盾~~ | ~~中~~ | ✅ 已修复 |
 | ~~5~~ | ~~SmartRouteTask 默认路由规则硬编码 gpt-4o/claude~~ | ~~无国产模型路由规则，实际使用时全部 fallback 到默认~~ | ~~中~~ | ✅ 已修复 |
 | 6 | SpanData 写入 Langfuse 缺少 input/output_tokens 分离 | 追踪数据 token 维度不完整 | 中 | ✅ 已修复 |
+| ~~7~~ | ~~启动脚本混乱（start_proxy.py / start_debug.py 并存）~~ | ~~start_proxy.py 会挂起，start_debug.py 功能重复~~ | ~~高~~ | ✅ 已修复 |
+| ~~8~~ | ~~model-tracing config.yaml hardcode master_key~~ | ~~与另外两份 config.yaml 不一致~~ | ~~低~~ | ✅ 已修复 |
+| ~~9~~ | ~~LiteLLM 数据库表缺失（SpendLogs 等）~~ | ~~用量统计不可用~~ | ~~中~~ | ✅ 已修复 |
+| ~~10~~ | ~~代码 / 文档端口不统一（4000 vs 4800）~~ | ~~test_glm.py 等无法运行~~ | ~~中~~ | ✅ 已修复 |
 
 > **已修复项**（2026-05-17）：
 > - 问题 2：`model-tracing/config.yaml` 已同步为国产模型（minimax-m2-5/7, deepseek-v4-flash/pro, glm-5-1），超时从 60s→120s，新增 `drop_params: true`
@@ -190,6 +194,14 @@ LANGFUSE_HOST=http://localhost:3000
 > - 问题 4：`model-task/` 已适配根 `.env`（load_dotenv 指向父目录）、langfuse_tracer.py 升级 v4 API、config.yaml 同步国产模型、main.py 端口 4800 + 国产模型
 > - 问题 5：SmartRouteTask 路由规则改为国产模型（deepseek-v4-pro/glm-5-1/minimax-m2-5/deepseek-v4-flash），新增 SIMPLE_QA，保留国外模型注释模板便于后续接入
 > - 问题 6：StepResult 增加 input_tokens/output_tokens，三种任务 _record() 均传递至 SpanData
+>
+> **已修复项**（2026-06-03）：
+> - 问题 7：合并 `start_debug.py` 功能至 `start_proxy.py`，使用 `litellm.exe` CLI 启动，支持 `--port`、`--background`、`--health-check`，自动设置 NO_PROXY 绕过代理；`start_debug.py` 已删除
+> - 问题 8：`model-tracing/config/config.yaml` master_key 改为 `os.environ/LITELLM_MASTER_KEY`，三份 config.yaml 一致
+> - 问题 9：执行 `prisma db push` 创建 64 张数据库表（含 `LiteLLM_SpendLogs`），用量统计可用
+> - 问题 10：`test_glm.py` 端口 4000→4800、`model_readme.md` 端口 4000→4800、`kb-0002` api_base 修正（MiniMax: `minimaxi.com/v1`、GLM: `api.z.ai`）
+> - 依赖升级：`C:\litellm-env` 中 litellm 从 1.86.2 升至 1.87.0
+> - `start_with_db.bat` 已删除（与 `.env` 不一致）
 
 ---
 

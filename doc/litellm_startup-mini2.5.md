@@ -1,32 +1,38 @@
 # LiteLLM Proxy 启动指南
 
-> 更新时间：2026-05-21
+> 更新时间：2026-06-03
 
 ## 一、快速启动
 
 ### 1.1 前置条件
 
 - Python 3.10+
-- litellm >= 1.84.0（`pip install litellm[proxy]>=1.84.0`）
+- litellm >= 1.84.0（虚拟环境 `C:\litellm-env` 已预装）
+- PostgreSQL 服务已运行（端口 5432），litellm 使用 `DATABASE_URL` 持久化配置
+- 虚拟环境中需安装 `prisma` 包：`C:\litellm-env\Scripts\pip install prisma`（否则启动报 warning）
 - 项目根目录 `.env` 文件已配置 API Keys
 
 ### 1.2 启动命令
 
-**前台运行（调试用）：**
-```powershell
-cd d:\Desktop\Test\MultiModel\model-platform
-python start_proxy.py
-```
+`start_proxy.py` 支持三种模式：
 
-**后台运行（生产用）：**
 ```powershell
 cd d:\Desktop\Test\MultiModel\model-platform
-Start-Process -FilePath python -ArgumentList "start_proxy.py" -WindowStyle Hidden
+
+# 模式1：前台运行（调试用，Ctrl+C 停止）
+py start_proxy.py
+
+# 模式2：后台运行（推荐，日志输出到 proxy.out.log / proxy.err.log）
+py start_proxy.py --background
+
+# 模式3：前台运行 + 自动健康检查（验证模型列表）
+# ⚠️ 谨慎使用：存在子进程端口复用竞态问题（见 4.7 节）
+py start_proxy.py --health-check
 ```
 
 默认监听端口 **4800**，可通过参数修改：
 ```powershell
-python start_proxy.py --port 4000
+py start_proxy.py --port 4000 --background
 ```
 
 ### 1.3 启动成功标志
@@ -71,12 +77,19 @@ Get-Process -Name python | Where-Object { $_.CommandLine -like "*start_proxy*" }
 
 ## 二、后台运行与日志
 
-### 2.1 后台启动
+### 2.1 后台启动（推荐）
 
-使用 `Start-Process` 后台启动，终端可继续使用：
 ```powershell
 cd d:\Desktop\Test\MultiModel\model-platform
-Start-Process -FilePath python -ArgumentList "start_proxy.py" -WindowStyle Hidden
+py start_proxy.py --background
+```
+
+输出示例：
+```
+[INFO] Proxy PID=17012（后台运行）
+[INFO] stdout -> D:\...\model-platform\proxy.out.log
+[INFO] stderr -> D:\...\model-platform\proxy.err.log
+[INFO] 停止命令: taskkill /PID 17012 /F
 ```
 
 ### 2.2 查看服务是否在运行
@@ -86,21 +99,30 @@ Start-Process -FilePath python -ArgumentList "start_proxy.py" -WindowStyle Hidde
 netstat -ano | findstr :4800
 
 # 示例输出表示服务运行中：
-# TCP    0.0.0.0:4800    0.0.0.0:0    LISTENING    12345
+# TCP    0.0.0.0:4800    0.0.0.0:0    LISTENING    17012
+
+# Python 快速验证（401 = 服务在运行）
+py -c "import requests; print(requests.get('http://localhost:4800/health', timeout=5).status_code)"
 ```
 
 ### 2.3 日志查看
 
-LiteLLM 默认输出到 stdout。可通过以下方式捕获日志：
+```powershell
+# 查看最新 20 行输出日志
+Get-Content -Path "d:\Desktop\Test\MultiModel\model-platform\proxy.out.log" -Tail 20
+
+# 查看错误日志
+Get-Content -Path "d:\Desktop\Test\MultiModel\model-platform\proxy.err.log" -Tail 20
+```
+
+### 2.4 自动健康检查模式（谨慎使用）
 
 ```powershell
-# 启动时重定向到文件
-cd d:\Desktop\Test\MultiModel\model-platform
-python start_proxy.py *> ..\..\litellm.log
-
-# 查看实时日志
-Get-Content -Path "d:\Desktop\Test\MultiModel\litellm.log" -Wait -Tail 20
+py start_proxy.py --health-check
 ```
+
+该模式会前台启动并自动等待就绪（最长 60s），然后打印加载的模型列表。
+⚠️ **已知问题**：健康检查通过后会触发子进程端口复用冲突（见 4.7 节），建议日常使用 `--background` 模式。
 
 ---
 
@@ -207,6 +229,43 @@ Invoke-RestMethod -Uri "http://localhost:4800/health" -Headers @{"Authorization"
 **原因**：端口曾从 4000 改为 4800，但测试脚本未同步更新。
 
 **解决**：已修正 `base_url="http://localhost:4800/v1"`。llm_client.py 同步修正。
+
+### 4.6 启动报 prisma 包缺失
+
+**现象**：启动时输出
+
+```
+Unable to connect to DB. DATABASE_URL found in environment, but prisma package not found.
+```
+
+**原因**：虚拟环境 `C:\litellm-env` 中未安装 `prisma` 包，LiteLLM 无法通过 Prisma ORM 连接 PostgreSQL。虽不影响核心代理功能，但会导致配置无法持久化到数据库。
+
+**解决**：
+
+```powershell
+C:\litellm-env\Scripts\pip install prisma
+```
+
+安装后需重启 LiteLLM 使生效。
+
+### 4.7 --health-check 模式端口冲突
+
+**现象**：使用 `--health-check` 启动后，健康检查通过但随后报错
+
+```
+ERROR: [Errno 10048] error while attempting to bind on address ('0.0.0.0', 4800):
+[winerror 10048] 通常每个套接字地址(协议/网络地址/端口)只允许使用一次。
+```
+
+**原因**：LiteLLM 内部存在子进程竞态——健康检查通过后主进程收到中断信号停止，但 litellm 内部的 worker 子进程仍试图绑定 4800 端口，与主进程产生冲突。这是 `start_proxy.py --health-check` 模式的设计缺陷。
+
+**解决**：日常使用 `--background` 模式代替 `--health-check`：
+
+```powershell
+py start_proxy.py --background
+# 手动验证
+py -c "import requests; print(requests.get('http://localhost:4800/health', timeout=5).status_code)"
+```
 
 ---
 
