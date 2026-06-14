@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MultiModel 项目架构全景</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --primary: #3b82f6;
+    --primary-light: #dbeafe;
+    --accent: #10b981;
+    --accent-light: #d1fae5;
+    --warning: #f59e0b;
+    --warning-light: #fef3c7;
+    --danger: #ef4444;
+    --danger-light: #fee2e2;
+    --purple: #8b5cf6;
+    --purple-light: #ede9fe;
+    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,.1);
+    --radius: 12px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.6;
+  }
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    color: #fff; padding: 40px 24px; text-align: center;
+  }
+  .header h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
+  .header p { font-size: 1rem; opacity: .9; }
+
+  /* ── Tab Navigation ── */
+  .tab-nav {
+    display: flex; gap: 4px; background: var(--card);
+    border-bottom: 2px solid var(--border);
+    padding: 0 24px; overflow-x: auto;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: var(--shadow);
+  }
+  .tab-btn {
+    padding: 14px 20px; cursor: pointer; border: none; background: transparent;
+    font-size: .9rem; font-weight: 500; color: var(--text-secondary);
+    border-bottom: 3px solid transparent; transition: all .2s; white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--primary); }
+  .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+
+  /* ── Tab Content ── */
+  .tab-content { display: none; padding: 32px 24px; max-width: 1200px; margin: 0 auto; }
+  .tab-content.active { display: block; }
+
+  /* ── Shared Components ── */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 24px; margin-bottom: 20px;
+    box-shadow: var(--shadow);
+  }
+  .card h2 {
+    font-size: 1.25rem; margin-bottom: 16px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--border);
+  }
+  .card h3 { font-size: 1.05rem; margin: 16px 0 10px; color: var(--primary); }
+  .card p, .card li { color: var(--text-secondary); font-size: .9rem; }
+
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: .75rem; font-weight: 600; margin: 2px;
+  }
+  .badge-blue { background: var(--primary-light); color: var(--primary); }
+  .badge-green { background: var(--accent-light); color: var(--accent); }
+  .badge-yellow { background: var(--warning-light); color: var(--warning); }
+  .badge-red { background: var(--danger-light); color: var(--danger); }
+  .badge-purple { background: var(--purple-light); color: var(--purple); }
+
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+
+  .stat-box {
+    background: var(--bg); border-radius: 8px; padding: 16px; text-align: center;
+  }
+  .stat-box .num { font-size: 1.8rem; font-weight: 700; color: var(--primary); }
+  .stat-box .label { font-size: .8rem; color: var(--text-secondary); margin-top: 4px; }
+
+  /* ── Architecture Diagram (CSS) ── */
+  .arch-layers { display: flex; flex-direction: column; gap: 12px; }
+  .arch-layer {
+    border-radius: 10px; padding: 16px 20px; text-align: center; position: relative;
+  }
+  .arch-layer .layer-title { font-weight: 700; font-size: .95rem; margin-bottom: 8px; }
+  .arch-layer .layer-items { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+  .arch-layer .layer-items .badge { font-size: .8rem; padding: 4px 12px; }
+
+  .layer-app { background: linear-gradient(135deg, #dbeafe, #ede9fe); }
+  .layer-trace { background: linear-gradient(135deg, #d1fae5, #cffafe); }
+  .layer-platform { background: linear-gradient(135deg, #fef3c7, #fed7aa); }
+  .layer-eval { background: linear-gradient(135deg, #fce7f3, #fbcfe8); }
+  .layer-infra { background: linear-gradient(135deg, #e2e8f0, #cbd5e1); }
+
+  .arch-arrow { text-align: center; font-size: 1.4rem; color: var(--text-secondary); line-height: 1; }
+
+  /* ── Feature Lists ── */
+  .feature-list { list-style: none; padding: 0; }
+  .feature-list li {
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  .feature-list li:last-child { border-bottom: none; }
+  .feature-list .icon { flex-shrink: 0; font-size: 1rem; }
+
+  .tag-group { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+  /* ── Timeline / Roadmap ── */
+  .timeline { position: relative; padding-left: 24px; }
+  .timeline::before {
+    content: ''; position: absolute; left: 8px; top: 0; bottom: 0;
+    width: 3px; background: var(--primary-light); border-radius: 2px;
+  }
+  .timeline-item { position: relative; margin-bottom: 24px; }
+  .timeline-item::before {
+    content: ''; position: absolute; left: -20px; top: 6px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--primary); border: 2px solid #fff;
+    box-shadow: 0 0 0 3px var(--primary-light);
+  }
+  .timeline-item h4 { font-size: .95rem; margin-bottom: 4px; }
+  .timeline-item p { font-size: .85rem; color: var(--text-secondary); }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    .header h1 { font-size: 1.4rem; }
+    .tab-content { padding: 20px 16px; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ Header ═══════════ -->
+<div class="header">
+  <h1>MultiModel 项目架构全景</h1>
+  <p>国产多模型统一接入 · 全链路追踪 · 代码生成评测</p>
+</div>
+
+<!-- ═══════════ Tab Navigation ═══════════ -->
+<div class="tab-nav">
+  <button class="tab-btn active" data-tab="overview">项目总览</button>
+  <button class="tab-btn" data-tab="platform">模型接入层</button>
+  <button class="tab-btn" data-tab="tracing">追踪层</button>
+  <button class="tab-btn" data-tab="eval">评测层</button>
+  <button class="tab-btn" data-tab="infra">运维与基础设施</button>
+  <button class="tab-btn" data-tab="roadmap">未来规划</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB 1 : 项目总览
+     ══════════════════════════════════════════════════════ -->
+<div class="tab-content active" id="tab-overview">
+
+  <!-- 核心定位 -->
+  <div class="card">
+    <h2>系统定位与核心能力</h2>
+    <p>MultiModel 是一套面向国产大模型的全链路开发平台，通过 <strong>LiteLLM Proxy</strong> 统一接入多个国产模型，提供 <strong>全链路追踪</strong>（Langfuse）和 <strong>代码生成评测</strong>（L1-L2 自动化）能力。</p>
+    <div class="tag-group" style="margin-top:12px">
+      <span class="badge badge-blue">统一接入</span>
+      <span class="badge badge-green">全链路追踪</span>
+      <span class="badge badge-purple">模型评测</span>
+      <span class="badge badge-yellow">智能路由</span>
+      <span class="badge badge-red">虚拟 Key</span>
+    </div>
+  </div>
+
+  <!-- 关键数据 -->
+  <div class="grid-3" style="margin-bottom:20px">
+    <div class="card stat-box">
+      <div class="num">5</div>
+      <div class="label">已接入模型</div>
+    </div>
+    <div class="card stat-box">
+      <div class="num">3</div>
+      <div class="label">任务模式</div>
+    </div>
+    <div class="card stat-box">
+      <div class="num">2</div>
+      <div class="label">评测等级 (L1/L2)</div>
+    </div>
+  </div>
+
+  <!-- 分层架构图 -->
+  <div class="card">
+    <h2>整体架构图</h2>
+    <div class="arch-layers">
+      <div class="arch-layer layer-app">
+        <div class="layer-title">应用层 — 任务调度</div>
+        <div class="layer-items">
+          <span class="badge badge-blue">Parallel 并行评测</span>
+          <span class="badge badge-blue">Pipeline 流水线</span>
+          <span class="badge badge-blue">SmartRoute 智能路由</span>
+        </div>
+      </div>
+      <div class="arch-arrow">▼</div>
+      <div class="arch-layer layer-trace">
+        <div class="layer-title">追踪层 — model-tracing</div>
+        <div class="layer-items">
+          <span class="badge badge-green">Console Tracer</span>
+          <span class="badge badge-green">Langfuse v4</span>
+          <span class="badge badge-green">Noop Tracer</span>
+          <span class="badge badge-green">工厂模式切换</span>
+        </div>
+      </div>
+      <div class="arch-arrow">▼</div>
+      <div class="arch-layer layer-platform">
+        <div class="layer-title">接入层 — model-platform</div>
+        <div class="layer-items">
+          <span class="badge badge-yellow">LiteLLM Proxy</span>
+          <span class="badge badge-yellow">虚拟 Key 管理</span>
+          <span class="badge badge-yellow">重试策略</span>
+          <span class="badge badge-yellow">健康检查</span>
+        </div>
+      </div>
+      <div class="arch-arrow">▼</div>
+      <div class="arch-layer layer-eval">
+        <div class="layer-title">评测层 — model-eval</div>
+        <div class="layer-items">
+          <span class="badge badge-purple">L1 语法检查</span>
+          <span class="badge badge-purple">L2 功能测试</span>
+          <span class="badge badge-purple">Langfuse Dataset</span>
+          <span class="badge badge-purple">JSON 持久化</span>
+        </div>
+      </div>
+      <div class="arch-arrow">▼</div>
+      <div class="arch-layer layer-infra">
+        <div class="layer-title">基础设施</div>
+        <div class="layer-items">
+          <span class="badge" style="background:#e2e8f0;color:#475569">PostgreSQL 15</span>
+          <span class="badge" style="background:#e2e8f0;color:#475569">WSL2 + Docker</span>
+          <span class="badge" style="background:#e2e8f0;color:#475569">统一 .env</span>
+          <span class="badge" style="background:#e2e8f0;color:#475569">Langfuse OSS</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 已接入模型 -->
+  <div class="card">
+    <h2>已接入模型列表</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:.9rem">
+      <thead>
+        <tr style="background:var(--bg);text-align:left">
+          <th style="padding:10px 12px;border-bottom:2px solid var(--border)">模型标识</th>
+          <th style="padding:10px 12px;border-bottom:2px solid var(--border)">底层模型</th>
+          <th style="padding:10px 12px;border-bottom:2px solid var(--border)">供应商</th>
+          <th style="padding:10px 12px;border-bottom:2px solid var(--border)">计费模式</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)">minimax-m2-5</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">MiniMax-M2.5</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">MiniMax</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><span class="badge badge-green">包月</span></td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)">minimax-m2-7</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">MiniMax-M2.7</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">MiniMax</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><span class="badge badge-green">包月</span></td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)">deepseek-v4-flash</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">deepseek-v4-flash</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">DeepSeek</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><span class="badge badge-green">包月</span></td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)">deepseek-v4-pro</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">deepseek-v4-pro</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">DeepSeek</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><span class="badge badge-green">包月</span></td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)">glm-5-1</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">glm-5.1</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">智谱 AI</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><span class="badge badge-green">包月</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 端口与环境 -->
+  <div class="grid-2">
+    <div class="card">
+      <h2>服务端口</h2>
+      <ul class="feature-list">
+        <li><span class="icon">🔌</span><div><strong>LiteLLM Proxy</strong> — localhost:4800</div></li>
+        <li><span class="icon">📊</span><div><strong>Langfuse Web</strong> — localhost:3000</div></li>
+        <li><span class="icon">🐘</span><div><strong>PostgreSQL</strong> — localhost:5432</div></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>技术栈概览</h2>
+      <div class="tag-group">
+        <span class="badge badge-blue">Python 3.10+</span>
+        <span class="badge badge-blue">LiteLLM</span>
+        <span class="badge badge-blue">asyncio</span>
+        <span class="badge badge-green">Langfuse v4 SDK</span>
+        <span class="badge badge-green">PostgreSQL 15</span>
+        <span class="badge badge-yellow">Docker (WSL2)</span>
+        <span class="badge badge-yellow">OpenAI 兼容协议</span>
+        <span class="badge badge-purple">Prisma ORM</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB 2 : 模型接入层 — model-platform
+     ══════════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-platform">
+
+  <div class="card">
+    <h2>模块定位</h2>
+    <p>基于 <strong>LiteLLM Proxy</strong> 构建的模型统一接入网关，对外暴露 OpenAI 兼容协议，对内管理多个国产模型的 API 调用、密钥映射与重试策略。</p>
+    <div class="tag-group" style="margin-top:12px">
+      <span class="badge badge-yellow">LiteLLM Proxy</span>
+      <span class="badge badge-blue">OpenAI 兼容</span>
+      <span class="badge badge-green">虚拟 Key</span>
+      <span class="badge badge-purple">PostgreSQL 存储</span>
+    </div>
+  </div>
+
+  <!-- 已实现功能 -->
+  <div class="card">
+    <h2>已实现功能</h2>
+    <div class="grid-2">
+      <div>
+        <h3>核心能力</h3>
+        <ul class="feature-list">
+          <li><span class="icon">✅</span><div>5 个国产模型统一接入（MiniMax / DeepSeek / 智谱）</div></li>
+          <li><span class="icon">✅</span><div>LiteLLM Proxy 统一代理，OpenAI 兼容协议</div></li>
+          <li><span class="icon">✅</span><div>虚拟 Key 管理（Master Key + 数据库映射）</div></li>
+          <li><span class="icon">✅</span><div>请求重试策略（num_retries=3, timeout=120s）</div></li>
+          <li><span class="icon">✅</span><div>健康检查端点</div></li>
+        </ul>
+      </div>
+      <div>
+        <h3>运维能力</h3>
+        <ul class="feature-list">
+          <li><span class="icon">✅</span><div>前台 / 后台双模式启动</div></li>
+          <li><span class="icon">✅</span><div>Prisma CLI Windows 兼容（shell=True）</div></li>
+          <li><span class="icon">✅</span><div>代理绕过（NO_PROXY 环境变量）</div></li>
+          <li><span class="icon">✅</span><div>本地 cost map 禁用远程获取</div></li>
+          <li><span class="icon">✅</span><div>PostgreSQL 数据库初始化脚本</div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 核心文件 -->
+  <div class="card">
+    <h2>核心文件</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:.9rem">
+      <thead>
+        <tr style="background:var(--bg);text-align:left">
+          <th style="padding:10px 12px;border-bottom:2px solid var(--border)">文件</th>
+          <th style="padding:10px 12px;border-bottom:2px solid var(--border)">职责</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>config.yaml</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">模型列表、重试策略、数据库连接</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>start_proxy.py</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">Proxy 启动入口（前台模式）</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>create_keys.py</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">虚拟 Key 创建工具</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>setup_litellm_db.py</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">PostgreSQL 数据库初始化</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>test_call.py</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">接口联调测试脚本</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 可深化方向 -->
+  <div class="card">
+    <h2>可深化方向</h2>
+    <div class="grid-3">
+      <div class="stat-box"><strong style="font-size:.9rem">负载均衡</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">多实例分流</p></div>
+      <div class="stat-box"><strong style="font-size:.9rem">流量控制</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">限速/配额</p></div>
+      <div class="stat-box"><strong style="font-size:.9rem">模型降级</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">故障自动切换</p></div>
+      <div class="stat-box"><strong style="font-size:.9rem">A/B 测试</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">模型效果对比</p></div>
+      <div class="stat-box"><strong style="font-size:.9rem">缓存层</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">重复请求缓存</p></div>
+      <div class="stat-box"><strong style="font-size:.9rem">更多模型</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">通义/文心/Kimi</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB 3 : 追踪层 — model-tracing
+     ══════════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-tracing">
+
+  <div class="card">
+    <h2>模块定位</h2>
+    <p>提供三种任务调度模式与全链路追踪能力。通过 <strong>工厂模式</strong> 切换追踪后端（Console / Langfuse / Noop），支持智能路由规则引擎自动匹配最优模型。</p>
+    <div class="tag-group" style="margin-top:12px">
+      <span class="badge badge-blue">Parallel</span>
+      <span class="badge badge-blue">Pipeline</span>
+      <span class="badge badge-blue">SmartRoute</span>
+      <span class="badge badge-green">Langfuse v4</span>
+      <span class="badge badge-purple">工厂模式</span>
+    </div>
+  </div>
+
+  <!-- 三种任务模式 -->
+  <div class="card">
+    <h2>三种任务模式</h2>
+    <div class="grid-3">
+      <div class="stat-box" style="border-left:4px solid var(--primary);">
+        <strong style="font-size:1rem">Parallel 并行</strong>
+        <p style="font-size:.85rem;color:var(--text-secondary);margin-top:8px;text-align:left">多个模型同时处理同一输入，结果横向对比。适用于模型评测场景。</p>
+        <div class="tag-group" style="margin-top:8px;justify-content:center">
+          <span class="badge badge-blue">多模型</span>
+          <span class="badge badge-blue">结果对比</span>
+        </div>
+      </div>
+      <div class="stat-box" style="border-left:4px solid var(--accent);">
+        <strong style="font-size:1rem">Pipeline 流水线</strong>
+        <p style="font-size:.85rem;color:var(--text-secondary);margin-top:8px;text-align:left">按步骤串行执行，不同步骤可指定不同模型。前一步输出作为下一步输入。</p>
+        <div class="tag-group" style="margin-top:8px;justify-content:center">
+          <span class="badge badge-green">串行</span>
+          <span class="badge badge-green">步骤编排</span>
+        </div>
+      </div>
+      <div class="stat-box" style="border-left:4px solid var(--purple);">
+        <strong style="font-size:1rem">SmartRoute 智能路由</strong>
+        <p style="font-size:.85rem;color:var(--text-secondary);margin-top:8px;text-align:left">根据输入内容自动匹配最优模型。内置规则引擎（代码→DeepSeek, 翻译→MiniMax, 分析→GLM）。</p>
+        <div class="tag-group" style="margin-top:8px;justify-content:center">
+          <span class="badge badge-purple">规则引擎</span>
+          <span class="badge badge-purple">自动选择</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 智能路由规则 -->
+  <div class="card">
+    <h2>智能路由规则表</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:.9rem">
+      <thead>
+        <tr style="background:var(--bg);text-align:left">
+          <th style="padding:10px 12px;border-bottom:2px solid var(--border)">任务类型</th>
+          <th style="padding:10px 12px;border-bottom:2px solid var(--border)">目标模型</th>
+          <th style="padding:10px 12px;border-bottom:2px solid var(--border)">匹配关键词</th>
+          <th style="padding:10px 12px;border-bottom:2px solid var(--border)">优先级</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)">CODE</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><span class="badge badge-blue">deepseek-v4-pro</span></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">代码/函数/python/bug/debug</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">10</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)">ANALYSIS</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><span class="badge badge-purple">glm-5-1</span></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">分析/为什么/原因/对比/评估</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">8</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)">TRANSLATION</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><span class="badge badge-green">minimax-m2-5</span></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">翻译/translate/英文/中文</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">7</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)">SUMMARIZATION</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><span class="badge badge-green">minimax-m2-5</span></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">总结/摘要/归纳</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">7</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)">LONG_GEN</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><span class="badge badge-blue">deepseek-v4-pro</span></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">输入长度 &gt; 300 字符</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">3</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)">SIMPLE_QA</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><span class="badge badge-yellow">deepseek-v4-flash</span></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">你好/什么是/介绍/解释</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">2</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)">DEFAULT</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><span class="badge badge-yellow">deepseek-v4-flash</span></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">兜底匹配</td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">0</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 追踪后端 -->
+  <div class="card">
+    <h2>追踪后端抽象</h2>
+    <div class="grid-3">
+      <div class="stat-box">
+        <strong>Console Tracer</strong>
+        <p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">开发调试，输出到控制台</p>
+      </div>
+      <div class="stat-box" style="border:2px solid var(--accent)">
+        <strong style="color:var(--accent)">Langfuse v4</strong>
+        <p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">生产级，可视化追踪分析</p>
+      </div>
+      <div class="stat-box">
+        <strong>Noop Tracer</strong>
+        <p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">空实现，禁用追踪</p>
+      </div>
+    </div>
+    <p style="margin-top:12px;font-size:.85rem;color:var(--text-secondary)">通过 <code>TRACER_BACKEND</code> 环境变量 + <strong>工厂模式</strong> 运行时切换，无需修改业务代码。</p>
+  </div>
+
+  <!-- 核心文件 -->
+  <div class="card">
+    <h2>核心文件</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:.9rem">
+      <thead>
+        <tr style="background:var(--bg);text-align:left">
+          <th style="padding:10px 12px;border-bottom:2px solid var(--border)">文件</th>
+          <th style="padding:10px 12px;border-bottom:2px solid var(--border)">职责</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>core/task.py</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">TaskMode 枚举、StepResult、TaskResult 数据结构</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>core/tracer.py</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">追踪抽象基类、TraceData、SpanData 定义</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>core/langfuse_tracer.py</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">Langfuse v4 SDK 适配实现</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>core/tracer_factory.py</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">工厂模式，按配置创建追踪后端</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>tasks/parallel_task.py</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">并行模式实现</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>tasks/pipeline_task.py</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">流水线模式实现</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>tasks/smart_route_task.py</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">智能路由 + 规则引擎实现</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 可深化方向 -->
+  <div class="card">
+    <h2>可深化方向</h2>
+    <div class="grid-3">
+      <div class="stat-box"><strong style="font-size:.9rem">动态路由</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">LLM 自动分类</p></div>
+      <div class="stat-box"><strong style="font-size:.9rem">规则热更新</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">无需重启</p></div>
+      <div class="stat-box"><strong style="font-size:.9rem">数据聚合</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">追踪数据分析</p></div>
+      <div class="stat-box"><strong style="font-size:.9rem">告警机制</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">异常自动通知</p></div>
+      <div class="stat-box"><strong style="font-size:.9rem">多租户</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">租户隔离追踪</p></div>
+      <div class="stat-box"><strong style="font-size:.9rem">性能基线</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">模型延迟对比</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB 4 : 评测层 — model-eval
+     ══════════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-eval">
+
+  <div class="card">
+    <h2>模块定位</h2>
+    <p>多语言代码生成评测框架，支持 <strong>L1 语法检查</strong> 和 <strong>L2 功能测试</strong> 自动化评分，涵盖 Python / JavaScript / SQL 三种语言。</p>
+    <div class="tag-group" style="margin-top:12px">
+      <span class="badge badge-purple">L1 语法检查</span>
+      <span class="badge badge-purple">L2 功能测试</span>
+      <span class="badge badge-blue">Python</span>
+      <span class="badge badge-yellow">JavaScript</span>
+      <span class="badge badge-green">SQL</span>
+      <span class="badge badge-red">Langfuse Dataset</span>
+    </div>
+  </div>
+
+  <!-- 评测体系 -->
+  <div class="card">
+    <h2>评测等级体系</h2>
+    <div class="grid-2">
+      <div class="stat-box" style="border-left:4px solid var(--accent);text-align:left;padding:20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span class="badge badge-green" style="font-size:.85rem">L1</span>
+          <strong style="font-size:1rem">语法检查</strong>
+        </div>
+        <p style="font-size:.85rem;color:var(--text-secondary)">验证生成的代码是否能通过解释器/编译器的语法解析，返回 0.0 或 1.0。</p>
+        <ul style="font-size:.8rem;color:var(--text-secondary);margin-top:8px;padding-left:16px">
+          <li>Python — <code>exec()</code> 语法验证</li>
+          <li>JavaScript — <code>new Function()</code> 验证</li>
+          <li>SQL — 关键字结构检查</li>
+        </ul>
+      </div>
+      <div class="stat-box" style="border-left:4px solid var(--primary);text-align:left;padding:20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span class="badge badge-blue" style="font-size:.85rem">L2</span>
+          <strong style="font-size:1rem">功能测试</strong>
+        </div>
+        <p style="font-size:.85rem;color:var(--text-secondary)">运行预定义的测试用例，计算通过率（0.0 ~ 1.0）。</p>
+        <ul style="font-size:.8rem;color:var(--text-secondary);margin-top:8px;padding-left:16px">
+          <li>Python — <code>exec()</code> + 测试断言</li>
+          <li>JavaScript — <code>new Function()</code> + 断言</li>
+          <li>SQL — 待实现</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 数据集 -->
+  <div class="card">
+    <h2>评测数据集</h2>
+    <div class="grid-3" style="margin-bottom:16px">
+      <div class="stat-box">
+        <div class="num">20</div>
+        <div class="label">评测样本总数</div>
+      </div>
+      <div class="stat-box">
+        <div class="num">3</div>
+        <div class="label">编程语言</div>
+      </div>
+      <div class="stat-box">
+        <div class="num">3</div>
+        <div class="label">代码粒度</div>
+      </div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:.9rem">
+      <thead>
+        <tr style="background:var(--bg);text-align:left">
+          <th style="padding:10px 12px;border-bottom:2px solid var(--border)">数据结构</th>
+          <th style="padding:10px 12px;border-bottom:2px solid var(--border)">说明</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>EvalInput</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">instruction + language + granularity + context</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>ExpectedOutput</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">test_cases + must_contain + reference_solution</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>EvalScore</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">syntax_valid (L1) + test_pass_rate (L2)</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>EvalResult</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">item_id + generated_code + scores + trace_id</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 已实现功能 -->
+  <div class="card">
+    <h2>已实现功能</h2>
+    <ul class="feature-list">
+      <li><span class="icon">✅</span><div>L1 语法检查（Python / JavaScript / SQL）</div></li>
+      <li><span class="icon">✅</span><div>L2 功能测试（Python / JavaScript），基于 test_cases 自动运行</div></li>
+      <li><span class="icon">✅</span><div>20 条多语言评测数据集（<code>code_gen_v1.json</code>）</div></li>
+      <li><span class="icon">✅</span><div>Langfuse Dataset / Experiment 集成</div></li>
+      <li><span class="icon">✅</span><div>推理模型 max_tokens 动态适配</div></li>
+      <li><span class="icon">✅</span><div>评测结果 JSON 持久化（带时间戳文件名）</div></li>
+    </ul>
+  </div>
+
+  <!-- 核心文件 -->
+  <div class="card">
+    <h2>核心文件</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:.9rem">
+      <thead>
+        <tr style="background:var(--bg);text-align:left">
+          <th style="padding:10px 12px;border-bottom:2px solid var(--border)">文件</th>
+          <th style="padding:10px 12px;border-bottom:2px solid var(--border)">职责</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>core/schema.py</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">EvalInput / ExpectedOutput / EvalScore / EvalResult 数据结构</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>core/evaluator.py</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">评测执行引擎（L1/L2 评分逻辑）</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>run_eval.py</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">评测主入口脚本</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>langfuse_dataset.py</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">Langfuse Dataset 上传工具</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>datasets/code_gen_v1.json</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">20 条评测数据集</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 可深化方向 -->
+  <div class="card">
+    <h2>可深化方向</h2>
+    <div class="grid-3">
+      <div class="stat-box"><strong style="font-size:.9rem">L3 需求完整性</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">语义级别评分</p></div>
+      <div class="stat-box"><strong style="font-size:.9rem">L4 代码质量</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">可读性/复杂度</p></div>
+      <div class="stat-box"><strong style="font-size:.9rem">SQL L2</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">数据库沙箱执行</p></div>
+      <div class="stat-box"><strong style="font-size:.9rem">更多语言</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">Go / Rust / Java</p></div>
+      <div class="stat-box"><strong style="font-size:.9rem">自动扩容</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">LLM 生成数据集</p></div>
+      <div class="stat-box"><strong style="font-size:.9rem">报告导出</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">PDF / HTML 报告</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB 5 : 运维与基础设施
+     ══════════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-infra">
+
+  <div class="card">
+    <h2>基础设施总览</h2>
+    <p>项目运行在 <strong>Windows + WSL2</strong> 混合环境中，使用 Docker Compose 部署 Langfuse，PostgreSQL 原生安装，统一 <code>.env</code> 管理全部配置。</p>
+  </div>
+
+  <!-- 已实现 -->
+  <div class="card">
+    <h2>已实现</h2>
+    <div class="grid-2">
+      <div>
+        <h3>配置管理</h3>
+        <ul class="feature-list">
+          <li><span class="icon">✅</span><div>统一 <code>.env</code> 配置（API Keys / 端口 / 追踪后端）</div></li>
+          <li><span class="icon">✅</span><div>多模块共用根目录环境变量</div></li>
+          <li><span class="icon">✅</span><div><code>.env.example</code> 模板文件</div></li>
+        </ul>
+      </div>
+      <div>
+        <h3>部署与运维</h3>
+        <ul class="feature-list">
+          <li><span class="icon">✅</span><div>WSL2 + Docker Compose 部署 Langfuse OSS</div></li>
+          <li><span class="icon">✅</span><div>Windows → WSL2 端口转发脚本</div></li>
+          <li><span class="icon">✅</span><div>Docker 运行诊断脚本（<code>check_docker</code>）</div></li>
+          <li><span class="icon">✅</span><div>PostgreSQL 15 原生安装 + 初始化脚本</div></li>
+          <li><span class="icon">✅</span><div>LiteLLM 数据库初始化（<code>setup_litellm_db.py</code>）</div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 核心脚本 -->
+  <div class="card">
+    <h2>核心脚本（scripts/）</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:.9rem">
+      <thead>
+        <tr style="background:var(--bg);text-align:left">
+          <th style="padding:10px 12px;border-bottom:2px solid var(--border)">脚本</th>
+          <th style="padding:10px 12px;border-bottom:2px solid var(--border)">功能</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>start_langfuse.bat/.ps1/.sh</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">启动 Langfuse Docker 服务</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>setup_langfuse.bat</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">首次部署 Langfuse</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>check_docker.bat/.ps1/.sh</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">Docker / Langfuse 运行状态诊断</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>port_forward.bat</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">WSL2 端口转发到 Windows</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>full_setup.ps1</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">一键全栈初始化</td></tr>
+        <tr><td style="padding:10px 12px;border-bottom:1px solid var(--border)"><code>update_cost_map.py</code></td><td style="padding:10px 12px;border-bottom:1px solid var(--border)">手动更新 LiteLLM cost map</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 环境信息 -->
+  <div class="card">
+    <h2>运行环境</h2>
+    <div class="grid-2">
+      <div class="stat-box" style="text-align:left">
+        <strong style="display:block;margin-bottom:8px">操作系统</strong>
+        <div class="tag-group">
+          <span class="badge badge-blue">Windows 22H2</span>
+          <span class="badge badge-yellow">WSL2 (Ubuntu)</span>
+        </div>
+      </div>
+      <div class="stat-box" style="text-align:left">
+        <strong style="display:block;margin-bottom:8px">运行时</strong>
+        <div class="tag-group">
+          <span class="badge badge-blue">Python 3.10+</span>
+          <span class="badge badge-green">Node.js (Prisma)</span>
+        </div>
+      </div>
+      <div class="stat-box" style="text-align:left">
+        <strong style="display:block;margin-bottom:8px">数据库</strong>
+        <div class="tag-group">
+          <span class="badge badge-blue">PostgreSQL 15</span>
+          </div>
+        </div>
+      </div>
+      <div class="stat-box" style="text-align:left">
+        <strong style="display:block;margin-bottom:8px">容器化</strong>
+        <div class="tag-group">
+          <span class="badge badge-yellow">Docker (WSL2)</span>
+          <span class="badge badge-yellow">Langfuse OSS</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 可深化 -->
+  <div class="card">
+    <h2>可深化方向</h2>
+    <div class="grid-3">
+      <div class="stat-box"><strong style="font-size:.9rem">CI/CD 流水线</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">GitHub Actions</p></div>
+      <div class="stat-box"><strong style="font-size:.9rem">Docker 全栈</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">全部服务容器化</p></div>
+      <div class="stat-box"><strong style="font-size:.9rem">监控告警</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">Prometheus + Grafana</p></div>
+      <div class="stat-box"><strong style="font-size:.9rem">日志聚合</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">ELK / Loki</p></div>
+      <div class="stat-box"><strong style="font-size:.9rem">配置中心</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">动态配置管理</p></div>
+      <div class="stat-box"><strong style="font-size:.9rem">密钥管理</strong><p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">Vault / KMS</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB 6 : 整体未来规划
+     ══════════════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-roadmap">
+
+  <div class="card">
+    <h2>发展路线图</h2>
+    <div class="timeline">
+      <div class="timeline-item">
+        <h4>短期（1-3 个月）</h4>
+        <p>废弃 model-task 冗余模块，统一使用 model-tracing</p>
+        <p>完善评测维度（L3 需求完整性评估）</p>
+        <p>实现 SQL L2 功能测试（数据库沙箱执行）</p>
+        <p>扩充评测数据集至 50+ 样本</p>
+      </div>
+      <div class="timeline-item">
+        <h4>中期（3-6 个月）</h4>
+        <p>开发 Web 管理界面（模型配置 / 追踪查看 / 评测报告）</p>
+        <p>REST API 服务化，对外暴露标准接口</p>
+        <p>多用户支持（认证 / 权限 / 配额）</p>
+        <p>动态路由升级为 LLM 自动分类</p>
+      </div>
+      <div class="timeline-item">
+        <h4>长期（6-12 个月）</h4>
+        <p>模型评估报告平台（可视化大屏 + 趋势分析）</p>
+        <p>企业级 MLOps（模型生命周期管理 / A/B 测试 / 灰度发布）</p>
+        <p>插件化架构（自定义评测器 / 追踪后端 / 路由策略）</p>
+        <p>Kubernetes 容器化部署 + 弹性伸缩</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 里程碑 -->
+  <div class="card">
+    <h2>关键里程碑</h2>
+    <div class="grid-3">
+      <div class="stat-box" style="border-top:4px solid var(--accent)">
+        <strong style="font-size:.9rem">v1.0 基础能力</strong>
+        <p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">5 模型接入 + 3 任务模式 + 追踪</p>
+        <span class="badge badge-green" style="margin-top:8px">已完成</span>
+      </div>
+      <div class="stat-box" style="border-top:4px solid var(--primary)">
+        <strong style="font-size:.9rem">v2.0 评测体系</strong>
+        <p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">L1/L2 自动评测 + Langfuse 集成</p>
+        <span class="badge badge-blue" style="margin-top:8px">已完成</span>
+      </div>
+      <div class="stat-box" style="border-top:4px solid var(--purple)">
+        <strong style="font-size:.9rem">v3.0 平台化</strong>
+        <p style="font-size:.8rem;color:var(--text-secondary);margin-top:4px">Web 管理界面 + REST API + 多用户</p>
+        <span class="badge badge-purple" style="margin-top:8px">规划中</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 架构演进 -->
+  <div class="card">
+    <h2>架构演进方向</h2>
+    <div class="grid-2">
+      <div>
+        <h3>当前架构</h3>
+        <ul class="feature-list">
+          <li><span class="icon">📌</span><div>单体脚本式调用</div></li>
+          <li><span class="icon">📌</span><div>本地 .env 配置管理</div></li>
+          <li><span class="icon">📌</span><div>CLI + 脚本交互</div></li>
+          <li><span class="icon">📌</span><div>单机部署</div></li>
+        </ul>
+      </div>
+      <div>
+        <h3>目标架构</h3>
+        <ul class="feature-list">
+          <li><span class="icon">🎯</span><div>微服务化（接入 / 追踪 / 评测独立部署）</div></li>
+          <li><span class="icon">🎯</span><div>配置中心 + 密钥管理</div></li>
+          <li><span class="icon">🎯</span><div>Web UI + REST API</div></li>
+          <li><span class="icon">🎯</span><div>K8s 容器编排 + 弹性伸缩</div></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     JavaScript
+     ══════════════════════════════════════════════════════ -->
+<script>
+  // Tab 切换逻辑
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabContents = document.querySelectorAll('.tab-content');
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.tab;
+
+      // 切换按钮状态
+      tabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      // 切换内容
+      tabContents.forEach(c => c.classList.remove('active'));
+      document.getElementById('tab-' + target).classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>
