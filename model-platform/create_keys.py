@@ -184,19 +184,28 @@ def cmd_list(args):
         print(f"{'='*80}")
 
         for k in keys:
+            # LiteLLM 1.87+ 返回 token 哈希字符串，需逐个查 info
+            if isinstance(k, str):
+                info = _fetch_key_info(k)
+                if info is None:
+                    print(f"  Key ID:  {k[:8]}... (详情获取失败)")
+                    print()
+                    continue
+            else:
+                info = k
+
             # 兼容不同的响应结构
-            key_name = (k.get("metadata") or {}).get("system", "")
-            models = k.get("models", [])
-            status = k.get("status", "active")
-            budget = k.get("max_budget", "")
-            key_id = k.get("key_id", k.get("token", ""))
-            spend = k.get("spend", 0)
+            key_name = (info.get("metadata") or {}).get("system", "")
+            models = info.get("models", [])
+            status = info.get("status", "active")
+            budget = info.get("max_budget", "")
+            key_id = info.get("key_id", info.get("token", k if isinstance(k, str) else ""))
+            spend = info.get("spend", 0)
 
             if key_name:
                 print(f"  名称:    {key_name}")
             if key_id:
-                # 只显示部分 Key，避免泄露
-                display = key_id[:8] + "..." if len(key_id) > 12 else key_id
+                display = key_id[:8] + "..." if len(str(key_id)) > 12 else key_id
                 print(f"  Key ID:  {display}")
             if models:
                 print(f"  模型:    {', '.join(models) if isinstance(models, list) else models}")
@@ -215,15 +224,37 @@ def cmd_list(args):
         sys.exit(1)
 
 
+def _fetch_key_info(token_hash):
+    """通过 token 哈希查询单个 Key 详情（内部使用）"""
+    try:
+        resp = requests.post(
+            f"{PROXY_URL}/v2/key/info",
+            headers=_headers(),
+            json={"keys": [token_hash]},
+            timeout=10,
+        )
+        data = resp.json()
+        if not resp.ok:
+            return None
+        # LiteLLM 1.87+ 响应格式: {"key": [...], "info": [{...}]}
+        if isinstance(data, dict):
+            info_list = data.get("info", [])
+            if isinstance(info_list, list) and info_list and isinstance(info_list[0], dict):
+                return info_list[0]
+        return None
+    except Exception:
+        return None
+
+
 def cmd_info(args):
     """查询单个 Key 详情"""
     key_or_id = args.key
 
     try:
         resp = requests.post(
-            f"{PROXY_URL}/key/info",
+            f"{PROXY_URL}/v2/key/info",
             headers=_headers(),
-            json={"key": key_or_id},
+            json={"keys": [key_or_id]},
             timeout=30,
         )
         data = resp.json()
@@ -232,7 +263,15 @@ def cmd_info(args):
             print(f"[ERROR] 查询失败: {data.get('error', data)}")
             sys.exit(1)
 
-        info = data.get("info", data.get("key", data))
+        # LiteLLM 1.87+ 响应格式: {"key": [...], "info": [{...}]}
+        if isinstance(data, dict):
+            info_list = data.get("info", [])
+            if isinstance(info_list, list) and info_list and isinstance(info_list[0], dict):
+                info = info_list[0]
+            else:
+                info = data.get("key", data) if isinstance(data.get("key"), dict) else data
+        else:
+            info = data
 
         print(f"\n{'='*60}")
         print(f"Key 详情")

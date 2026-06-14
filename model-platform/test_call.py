@@ -233,13 +233,18 @@ def test_query_key(stats, keys):
 
     try:
         resp = requests.post(
-            f"{PROXY_URL}/key/info",
+            f"{PROXY_URL}/v2/key/info",
             headers=_headers(),
-            json={"key": test_key},
+            json={"keys": [test_key]},
             timeout=30,
         )
         data = resp.json()
-        info = data.get("info", data.get("key", data))
+        # LiteLLM 1.87+ 响应格式: {"key": [...], "info": [{...}]}
+        info_list = data.get("info", [])
+        if isinstance(info_list, list) and info_list:
+            info = info_list[0]
+        else:
+            info = data.get("key", data) if isinstance(data.get("key"), dict) else data
 
         # 验证返回的信息包含模型列表
         models = info.get("models", [])
