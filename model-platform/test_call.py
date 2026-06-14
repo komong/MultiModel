@@ -50,7 +50,7 @@ TEST_KEY_CONFIGS = [
         "models": [
             "minimax-m2-5", "minimax-m2-7",
             "deepseek-v4-flash", "deepseek-v4-pro",
-            "glm-5-1",
+            "glm-5-1", "glm-5-2",
         ],
         "budget": None,
     },
@@ -209,6 +209,7 @@ def test_permission_isolation(stats, keys):
         ("test-all", "minimax-m2-5", True),
         ("test-all", "deepseek-v4-flash", True),
         ("test-all", "glm-5-1", True),
+        ("test-all", "glm-5-2", True),
     ]
 
     for key_name, model, expected_success in cases:

@@ -20,6 +20,7 @@
 | DeepSeek | `deepseek-v4-flash` | `deepseek/deepseek-v4-flash` | 默认 | ✅ |
 | DeepSeek | `deepseek-v4-pro` | `deepseek/deepseek-v4-pro` | 默认 | ✅ |
 | 智谱 | `glm-5-1` | `openai/glm-5.1` | `https://api.z.ai/api/paas/v4/` | ✅ 已验证 2026-05-16 |
+| 智谱 | `glm-5-2` | `openai/glm-5.2` | `https://api.z.ai/api/paas/v4/` | ✅ 新增 |
 
 ## 文件说明
 
@@ -30,6 +31,7 @@
 | `start_proxy.py` | 启动脚本，自动加载 `.env`、补丁 Prisma CLI、启动 proxy |
 | `test_call.py` | 虚拟 Key 自动化测试（7 步流程：连通性→生成→隔离→查询→更新→吊销→清理） |
 | `test_glm.py` | 单独测试 GLM-5.1（含 `thinking: disabled` 参数） |
+| `test_glm52.py` | 单独测试 GLM-5.2（含 `thinking: disabled` 参数） |
 | `create_keys.py` | 虚拟 Key 管理工具（5 个子命令，见下文） |
 | `setup_litellm_db.py` | 数据库初始化脚本（本地 PostgreSQL 方式） |
 | `create_views.sql` | 8 个 LiteLLM 系统视图 SQL 定义 |

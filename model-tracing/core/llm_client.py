@@ -26,7 +26,10 @@ class LLMResponse:
 
 
 # 推理模型：思考链消耗大量 token，需要更高的 max_tokens
-REASONING_MODELS = {"minimax-m2-7", "deepseek-v4-flash", "deepseek-v4-pro"}
+REASONING_MODELS = {"minimax-m2-7", "deepseek-v4-flash", "deepseek-v4-pro", "glm-5-2"}
+
+# GLM 推理模型：默认开启思考链，需禁用以避免空响应
+GLM_REASONING_MODELS = {"glm-5-2"}
 
 
 class LLMClient:
@@ -65,6 +68,10 @@ class LLMClient:
             effective_max_tokens = max_tokens
             if model in REASONING_MODELS and max_tokens <= 2048:
                 effective_max_tokens = 8192
+
+            # GLM 推理模型：禁用思考链，避免空响应
+            if model in GLM_REASONING_MODELS:
+                extra_body["thinking"] = {"type": "disabled"}
             
             response = await self.client.chat.completions.create(
                 model=model,

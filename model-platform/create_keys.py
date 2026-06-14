@@ -76,7 +76,7 @@ PRESET_TEMPLATES = [
         "models": [
             "minimax-m2-5", "minimax-m2-7",
             "deepseek-v4-flash", "deepseek-v4-pro",
-            "glm-5-1",
+            "glm-5-1", "glm-5-2",
         ],
         "budget": None,
     },

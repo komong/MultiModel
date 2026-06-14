@@ -28,3 +28,6 @@ model-eval/results/*.json
 pg15/
 pgdata/
 pg15-binaries.zip
+
+# —— Windows 误创建文件 ——
+nul

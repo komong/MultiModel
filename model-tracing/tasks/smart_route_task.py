@@ -48,14 +48,26 @@ class SmartRouteTask:
         ),
         RoutingRule(
             task_type=TaskType.ANALYSIS,
-            model="glm-5-1",
+            model="glm-5-2",
             matcher=lambda p: any(
                 kw in p.lower() for kw in
                 ["分析", "为什么", "原因", "对比", "比较", "评估",
                  "analyze", "compare", "evaluate", "reason"]
             ),
             priority=8,
-            description="分析推理任务 → glm-5-1",
+            description="分析推理任务 → glm-5-2",
+        ),
+        # GLM-5.1 作为分析任务的 fallback（优先级降低）
+        RoutingRule(
+            task_type=TaskType.ANALYSIS,
+            model="glm-5-1",
+            matcher=lambda p: any(
+                kw in p.lower() for kw in
+                ["分析", "为什么", "原因", "对比", "比较", "评估",
+                 "analyze", "compare", "evaluate", "reason"]
+            ),
+            priority=6,
+            description="分析推理任务（备选） → glm-5-1",
         ),
         RoutingRule(
             task_type=TaskType.TRANSLATION,

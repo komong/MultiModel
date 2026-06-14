@@ -172,6 +172,7 @@ run_eval.py
 | deepseek-v4-flash | `deepseek/deepseek-v4-flash` | DeepSeek 默认端点 | DeepSeek |
 | deepseek-v4-pro | `deepseek/deepseek-v4-pro` | DeepSeek 默认端点 | DeepSeek |
 | glm-5-1 | `openai/glm-5.1` | `https://api.z.ai/api/paas/v4/` | 智谱 AI |
+| glm-5-2 | `openai/glm-5.2` | `https://api.z.ai/api/paas/v4/` | 智谱 AI |
 
 ---
 
@@ -280,7 +281,7 @@ python run_eval.py --skip-upload
 | 任务类型 | 路由模型 | 匹配关键词 | 优先级 |
 |----------|----------|-----------|--------|
 | CODE（代码） | deepseek-v4-pro | 代码、函数、python、bug、sql... | 10 |
-| ANALYSIS（分析推理） | glm-5-1 | 分析、为什么、对比、评估... | 8 |
+| ANALYSIS（分析推理） | glm-5-2 | 分析、为什么、对比、评估... | 8 |
 | TRANSLATION（翻译） | minimax-m2-5 | 翻译、translate、英文、中文... | 7 |
 | SUMMARIZATION（摘要） | minimax-m2-5 | 总结、摘要、归纳... | 7 |
 | LONG_GENERATION（长文本） | deepseek-v4-pro | 输入长度 > 300 字符 | 3 |
